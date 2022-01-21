@@ -3,231 +3,171 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Pidgin
-{
-    public static partial class Parser
-    {
-        /// <summary>
-        /// Creates a parser which applies the current parser zero or more times, packing the resulting characters into a string.
-        /// Equivalent to <c>parser.Many().Select(cs => string.Concat(cs))</c>
-        /// </summary>
-        /// <param name="parser">A parser returning a single character</param>
-        /// <returns>A parser which applies the current parser zero or more times, packing the resulting characters into a string.</returns>
-        public static Parser<TToken, string> ManyString<TToken>(this Parser<TToken, char> parser)
-        {
-            if (parser == null)
-            {
-                throw new ArgumentNullException(nameof(parser));
-            }
-            
-            return parser.AtLeastOnceString().Or(Parser<TToken>.Return(""));
-        }
+namespace Pidgin;
 
-        /// <summary>
-        /// Creates a parser which applies the current parser zero or more times, concatenating the resulting string pieces.
-        /// Equivalent to <c>parser.Many().Select(cs => string.Concat(cs))</c>
-        /// </summary>
-        /// <param name="parser">A parser returning a single character</param>
-        /// <returns>A parser which applies the current parser zero or more times, concatenating the resulting string pieces.</returns>
-        public static Parser<TToken, string> ManyString<TToken>(this Parser<TToken, string> parser)
-        {
-            if (parser == null)
-            {
-                throw new ArgumentNullException(nameof(parser));
-            }
+public static partial class Parser {
 
-            return parser.AtLeastOnceString().Or(Parser<TToken>.Return(""));
-        }
-        
-        /// <summary>
-        /// Creates a parser which applies the current parser one or more times, packing the resulting characters into a string.
-        /// Equivalent to <c>parser.Many().Select(cs => string.Concat(cs))</c>
-        /// </summary>
-        /// <param name="parser">A parser returning a single character</param>
-        /// <returns>A parser which applies the current parser one or more times, packing the resulting characters into a string.</returns>
-        public static Parser<TToken, string> AtLeastOnceString<TToken>(this Parser<TToken, char> parser)
-        {
-            if (parser == null)
-            {
-                throw new ArgumentNullException(nameof(parser));
-            }
+	/// <summary>
+	/// Creates a parser which applies the current parser one or more times, packing the resulting characters into a string.
+	/// Equivalent to <c>parser.Many().Select(cs => string.Concat(cs))</c>
+	/// </summary>
+	/// <param name="parser">A parser returning a single character</param>
+	/// <returns>A parser which applies the current parser one or more times, packing the resulting characters into a string.</returns>
+	public static Parser<TToken, string> AtLeastOnceString<TToken>( this Parser<TToken, char> parser ) {
+		ArgumentNullException.ThrowIfNull(parser);
+		return parser.AtLeastOncePooled()
+			.Select(sb => GetStringAndDispose(sb));
+	}
 
-            return parser.AtLeastOncePooled()
-                .Select(sb => GetStringAndDispose(sb));
-        }
-        
-        /// <summary>
-        /// Creates a parser which applies the current parser one or more times, concatenating the resulting string pieces.
-        /// Equivalent to <c>parser.Many().Select(cs => string.Concat(cs))</c>
-        /// </summary>
-        /// <param name="parser">A parser returning a single character</param>
-        /// <returns>A parser which applies the current parser one or more times, concatenating the resulting string pieces.</returns>
-        public static Parser<TToken, string> AtLeastOnceString<TToken>(this Parser<TToken, string> parser)
-        {
-            if (parser == null)
-            {
-                throw new ArgumentNullException(nameof(parser));
-            }
+	/// <summary>
+	/// Creates a parser which applies the current parser one or more times, concatenating the resulting string pieces.
+	/// Equivalent to <c>parser.Many().Select(cs => string.Concat(cs))</c>
+	/// </summary>
+	/// <param name="parser">A parser returning a single character</param>
+	/// <returns>A parser which applies the current parser one or more times, concatenating the resulting string pieces.</returns>
+	public static Parser<TToken, string> AtLeastOnceString<TToken>( this Parser<TToken, string> parser ) {
+		ArgumentNullException.ThrowIfNull(parser);
+		return parser.ChainAtLeastOnce<string, ChunkedStringChainer>(c => new ChunkedStringChainer(c.ArrayPoolProvider.GetArrayPool<char>()));
+	}
 
-            return parser.ChainAtLeastOnce<string, ChunkedStringChainer>(c => new ChunkedStringChainer(c.ArrayPoolProvider.GetArrayPool<char>()));
-        }
+	/// <summary>
+	/// Creates a parser which applies the current parser zero or more times, packing the resulting characters into a string.
+	/// Equivalent to <c>parser.Many().Select(cs => string.Concat(cs))</c>
+	/// </summary>
+	/// <param name="parser">A parser returning a single character</param>
+	/// <returns>A parser which applies the current parser zero or more times, packing the resulting characters into a string.</returns>
+	public static Parser<TToken, string> ManyString<TToken>( this Parser<TToken, char> parser ) {
+		ArgumentNullException.ThrowIfNull(parser);
+		return parser.AtLeastOnceString().Or(Parser<TToken>.Return(""));
+	}
 
-        private struct ChunkedStringChainer : IChainer<string, string>
-        {
-            private PooledList<char> _list;
+	/// <summary>
+	/// Creates a parser which applies the current parser zero or more times, concatenating the resulting string pieces.
+	/// Equivalent to <c>parser.Many().Select(cs => string.Concat(cs))</c>
+	/// </summary>
+	/// <param name="parser">A parser returning a single character</param>
+	/// <returns>A parser which applies the current parser zero or more times, concatenating the resulting string pieces.</returns>
+	public static Parser<TToken, string> ManyString<TToken>( this Parser<TToken, string> parser ) {
+		ArgumentNullException.ThrowIfNull(parser);
+		return parser.AtLeastOnceString().Or(Parser<TToken>.Return(""));
+	}
 
-            public ChunkedStringChainer(ArrayPool<char> arrayPool)
-            {
-                _list = new PooledList<char>(arrayPool);
-            }
+	private static string GetStringAndDispose( PooledList<char> sb ) {
+		var str = sb.AsSpan().ToString();
+		sb.Dispose();
+		return str;
+	}
 
-            public void Setup()
-            {
-            }
+	private struct ChunkedStringChainer : IChainer<string, string> {
+		private PooledList<char> _list;
 
-            public void Apply(string value)
-            {
-                _list.AddRange(value.AsSpan());
-            }
+		public ChunkedStringChainer( ArrayPool<char> arrayPool ) => _list = new(arrayPool);
 
-            public string GetResult() => GetStringAndDispose(_list);
+		public void Apply( string value ) => _list.AddRange(value.AsSpan());
 
-            public void OnError()
-            {
-                _list.Dispose();
-            }
-        }
+		public string GetResult() => GetStringAndDispose(_list);
 
-        private static string GetStringAndDispose(PooledList<char> sb)
-        {
-            var str = sb.AsSpan().ToString();
-            sb.Dispose();
-            return str;
-        }
-    }
+		public void OnError() => _list.Dispose();
 
-    public abstract partial class Parser<TToken, T>
-    {
-        private static Parser<TToken, IEnumerable<T>>? _returnEmptyEnumerable;
-        private static Parser<TToken, IEnumerable<T>> ReturnEmptyEnumerable
-        {
-            get
-            {
-                if (_returnEmptyEnumerable == null)
-                {
-                    _returnEmptyEnumerable = Parser<TToken>.Return(Enumerable.Empty<T>());
-                }
-                return _returnEmptyEnumerable;
-            }
-        }
-        private static Parser<TToken, Unit>? _returnUnit;
-        private static Parser<TToken, Unit> ReturnUnit
-        {
-            get
-            {
-                if (_returnUnit == null)
-                {
-                    _returnUnit = Parser<TToken>.Return(Unit.Value);
-                }
-                return _returnUnit;
-            }
-        }
+		public void Setup() {
+		}
+	}
+}
 
-        /// <summary>
-        /// Creates a parser which applies the current parser zero or more times.
-        /// The resulting parser fails if the current parser fails after consuming input.
-        /// </summary>
-        /// <returns>A parser which applies the current parser zero or more times</returns>
-        public Parser<TToken, IEnumerable<T>> Many()
-            => this.AtLeastOnce()
-                .Or(ReturnEmptyEnumerable);
+public abstract partial class Parser<TToken, T> {
+	private static Parser<TToken, IEnumerable<T>>? _returnEmptyEnumerable;
+	private static Parser<TToken, Unit>? _returnUnit;
 
-        /// <summary>
-        /// Creates a parser that applies the current parser one or more times.
-        /// The resulting parser fails if the current parser fails the first time it is applied, or if the current parser fails after consuming input
-        /// </summary>
-        /// <returns>A parser that applies the current parser one or more times</returns>
-        public Parser<TToken, IEnumerable<T>> AtLeastOnce()
-            => this.ChainAtLeastOnce<IEnumerable<T>, ListChainer>(c => new ListChainer(null));
+	private static Parser<TToken, IEnumerable<T>> ReturnEmptyEnumerable {
+		get {
+			if( _returnEmptyEnumerable == null ) {
+				_returnEmptyEnumerable = Parser<TToken>.Return(Enumerable.Empty<T>());
+			}
+			return _returnEmptyEnumerable;
+		}
+	}
 
-        private struct ListChainer : IChainer<T, IEnumerable<T>>
-        {
-            private readonly List<T> _list;
+	private static Parser<TToken, Unit> ReturnUnit {
+		get {
+			if( _returnUnit == null ) {
+				_returnUnit = Parser<TToken>.Return(Unit.Value);
+			}
+			return _returnUnit;
+		}
+	}
 
-            public ListChainer(object? dummy)
-            {
-                _list = new List<T>();
-            }
+	/// <summary>
+	/// Creates a parser that applies the current parser one or more times.
+	/// The resulting parser fails if the current parser fails the first time it is applied, or if the current parser fails after consuming input
+	/// </summary>
+	/// <returns>A parser that applies the current parser one or more times</returns>
+	public Parser<TToken, IEnumerable<T>> AtLeastOnce()
+		=> ChainAtLeastOnce<IEnumerable<T>, ListChainer>(c => new ListChainer(null));
 
-            public void Apply(T value)
-            {
-                _list.Add(value);
-            }
+	/// <summary>
+	/// Creates a parser which applies the current parser zero or more times.
+	/// The resulting parser fails if the current parser fails after consuming input.
+	/// </summary>
+	/// <returns>A parser which applies the current parser zero or more times</returns>
+	public Parser<TToken, IEnumerable<T>> Many()
+		=> AtLeastOnce()
+			.Or(ReturnEmptyEnumerable);
 
-            public IEnumerable<T> GetResult()
-            {
-                return _list;
-            }
+	/// <summary>
+	/// Creates a parser that applies the current parser one or more times, discarding the results.
+	/// This is more efficient than <see cref="AtLeastOnce()"/>, if you don't need the results.
+	/// The resulting parser fails if the current parser fails the first time it is applied, or if the current parser fails after consuming input
+	/// </summary>
+	/// <returns>A parser that applies the current parser one or more times, discarding the results</returns>
+	public Parser<TToken, Unit> SkipAtLeastOnce()
+		=> ChainAtLeastOnce<Unit, NullChainer>(c => new NullChainer());
 
-            public void OnError()
-            {
-            }
-        }
+	/// <summary>
+	/// Creates a parser which applies the current parser zero or more times, discarding the results.
+	/// This is more efficient than <see cref="Many()"/>, if you don't need the results.
+	/// The resulting parser fails if the current parser fails after consuming input.
+	/// </summary>
+	/// <returns>A parser which applies the current parser zero or more times</returns>
+	public Parser<TToken, Unit> SkipMany()
+		=> SkipAtLeastOnce()
+			.Or(ReturnUnit);
 
-        internal Parser<TToken, PooledList<T>> AtLeastOncePooled()
-            => this.ChainAtLeastOnce<PooledList<T>, PooledListChainer>(c => new PooledListChainer(c.ArrayPoolProvider.GetArrayPool<T>()));
+	internal Parser<TToken, PooledList<T>> AtLeastOncePooled()
+		=> ChainAtLeastOnce<PooledList<T>, PooledListChainer>(c => new PooledListChainer(c.ArrayPoolProvider.GetArrayPool<T>()));
 
-        private struct PooledListChainer : IChainer<T, PooledList<T>>
-        {
-            private PooledList<T> _list;
+	private struct ListChainer : IChainer<T, IEnumerable<T>> {
+		private readonly List<T> _list;
 
-            public PooledListChainer(ArrayPool<T> arrayPool)
-            {
-                _list = new PooledList<T>(arrayPool);
-            }
+		public ListChainer( object? dummy ) => _list = new List<T>();
 
-            public void Apply(T value)
-            {
-                _list.Add(value);
-            }
+		public void Apply( T value ) => _list.Add(value);
 
-            public PooledList<T> GetResult()
-            {
-                return _list;
-            }
+		public IEnumerable<T> GetResult() => _list;
 
-            public void OnError()
-            {
-                _list.Dispose();
-            }
-        }
+		public void OnError() {
+		}
+	}
 
-        /// <summary>
-        /// Creates a parser which applies the current parser zero or more times, discarding the results.
-        /// This is more efficient than <see cref="Many()"/>, if you don't need the results.
-        /// The resulting parser fails if the current parser fails after consuming input.
-        /// </summary>
-        /// <returns>A parser which applies the current parser zero or more times</returns>
-        public Parser<TToken, Unit> SkipMany()
-            => this.SkipAtLeastOnce()
-                .Or(ReturnUnit);
+	private struct NullChainer : IChainer<T, Unit> {
 
-        /// <summary>
-        /// Creates a parser that applies the current parser one or more times, discarding the results.
-        /// This is more efficient than <see cref="AtLeastOnce()"/>, if you don't need the results.
-        /// The resulting parser fails if the current parser fails the first time it is applied, or if the current parser fails after consuming input
-        /// </summary>
-        /// <returns>A parser that applies the current parser one or more times, discarding the results</returns>
-        public Parser<TToken, Unit> SkipAtLeastOnce()
-            => this.ChainAtLeastOnce<Unit, NullChainer>(c => new NullChainer());
+		public void Apply( T value ) {
+		}
 
-        private struct NullChainer : IChainer<T, Unit>
-        {
-            public void Apply(T value) {}
+		public Unit GetResult() => Unit.Value;
 
-            public Unit GetResult() => Unit.Value;
+		public void OnError() {
+		}
+	}
 
-            public void OnError() {}
-        }
-    }
+	private struct PooledListChainer : IChainer<T, PooledList<T>> {
+		private PooledList<T> _list;
+
+		public PooledListChainer( ArrayPool<T> arrayPool ) => _list = new PooledList<T>(arrayPool);
+
+		public void Apply( T value ) => _list.Add(value);
+
+		public PooledList<T> GetResult() => _list;
+
+		public void OnError() => _list.Dispose();
+	}
 }
