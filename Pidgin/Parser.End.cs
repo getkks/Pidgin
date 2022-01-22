@@ -8,7 +8,11 @@ public static partial class Parser<TToken> {
 	/// Creates a parser which parses the end of the input stream
 	/// </summary>
 	/// <returns>A parser which parses the end of the input stream and returns <see cref="Unit.Value"/></returns>
+<<<<<<< HEAD
 	public static Parser<TToken, Unit> End  => new EndParser<TToken>();
+=======
+	public static Parser<TToken, Unit> End { get; } = new EndParser<TToken>();
+>>>>>>> 746aa4862e8ab2199671a0bd730714fe9bd680d2
 }
 
 internal sealed class EndParser<TToken> : Parser<TToken, Unit> {

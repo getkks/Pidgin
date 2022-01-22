@@ -25,11 +25,15 @@ public abstract partial class Parser<TToken, T> {
 	/// <param name="parser">A parser to apply after applying the current parser</param>
 	/// <param name="result">A function to apply to the two parsed values</param>
 	/// <returns>A parser which applies the current parser followed by <paramref name="parser"/></returns>
+<<<<<<< HEAD
 	public Parser<TToken, R> Then<U, R>( Parser<TToken, U> parser, Func<T, U, R> result ) {
 		ArgumentNullException.ThrowIfNull(parser);
 		ArgumentNullException.ThrowIfNull(result);
 		return Parser.Map(result, this, parser);
 	}
+=======
+	public Parser<TToken, R> Then<U, R>( Parser<TToken, U> parser, Func<T, U, R> result ) => Parser.Map(result, this, parser);
+>>>>>>> 746aa4862e8ab2199671a0bd730714fe9bd680d2
 
 	/// <summary>
 	/// Creates a parser that applies a transformation function to the return value of the current parser.
