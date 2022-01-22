@@ -23,7 +23,7 @@ Pidgin's core type, `Parser<TToken, T>`, represents a procedure which consumes a
 delegate T? Parser<TToken, T>(IEnumerator<TToken> input);
 ```
 
-In order to start building parsers we need to import two classes which contain factory methods: `Parser` and `Parser<TToken>`. 
+In order to start building parsers we need to import two classes which contain factory methods: `Parser` and `Parser<TToken>`.
 
 ```csharp
 using Pidgin;
@@ -263,48 +263,48 @@ Comparison to other tools
 
 This is how Pidgin compares to other tools in terms of performance. The benches can be found in the `Pidgin.Bench` project.
 
-```ini
-BenchmarkDotNet=v0.11.5, OS=Windows 10.0.14393.3384 (1607/AnniversaryUpdate/Redstone1)
-Intel Core i5-4460 CPU 3.20GHz (Haswell), 1 CPU, 4 logical and 4 physical cores
-Frequency=3125000 Hz, Resolution=320.0000 ns, Timer=TSC
-.NET Core SDK=3.1.100
-  [Host]     : .NET Core 3.0.0 (CoreCLR 4.700.19.46205, CoreFX 4.700.19.46214), 64bit RyuJIT
-  DefaultJob : .NET Core 3.0.0 (CoreCLR 4.700.19.46205, CoreFX 4.700.19.46214), 64bit RyuJIT
+``` ini
+
+BenchmarkDotNet=v0.13.1, OS=Windows 10.0.19043.1466 (21H1/May2021Update)
+AMD Ryzen 5 5600X, 1 CPU, 12 logical and 6 physical cores
+.NET SDK=6.0.200-preview.22055.15
+  [Host]     : .NET 6.0.1 (6.0.121.56705), X64 RyuJIT
+  DefaultJob : .NET 6.0.1 (6.0.121.56705), X64 RyuJIT
 ```
 
 #### `ExpressionBench`
 
-|              Method |         Mean |        Error |        StdDev | Ratio | RatioSD |  Gen 0 | Gen 1 | Gen 2 | Allocated |
-|-------------------- |-------------:|-------------:|--------------:|------:|--------:|-------:|------:|------:|----------:|
-|   LongInfixL_Pidgin | 625,148.8 ns | 3,015.040 ns | 2,672.7541 ns |  2.25 |    0.01 |      - |     - |     - |     128 B |
-|   LongInfixR_Pidgin | 625,530.1 ns | 4,104.833 ns | 3,839.6633 ns |  2.25 |    0.02 |      - |     - |     - |     128 B |
-|  LongInfixL_FParsec | 278,035.1 ns | 1,231.538 ns | 1,151.9816 ns |  1.00 |    0.00 |      - |     - |     - |     200 B |
-|  LongInfixR_FParsec | 326,047.3 ns |   931.485 ns |   871.3119 ns |  1.17 |    0.01 |      - |     - |     - |     200 B |
-|                     |              |              |               |       |         |        |       |       |           |
-|  ShortInfixL_Pidgin |   1,506.5 ns |     5.515 ns |     5.1590 ns |  2.67 |    0.01 | 0.0401 |     - |     - |     128 B |
-|  ShortInfixR_Pidgin |   1,636.6 ns |     6.882 ns |     5.7467 ns |  2.90 |    0.02 | 0.0401 |     - |     - |     128 B |
-| ShortInfixL_FParsec |     564.1 ns |     1.894 ns |     1.6788 ns |  1.00 |    0.00 | 0.0629 |     - |     - |     200 B |
-| ShortInfixR_FParsec |     567.7 ns |     1.200 ns |     0.9373 ns |  1.01 |    0.00 | 0.0629 |     - |     - |     200 B |
+|              Method |          Mean |        Error |       StdDev | Ratio | RatioSD |  Gen 0 | Allocated |
+|-------------------- |--------------:|-------------:|-------------:|------:|--------:|-------:|----------:|
+|   LongInfixL_Pidgin | 261,991.22 ns | 2,222.554 ns | 2,078.978 ns | 10.81 |    0.08 |      - |     137 B |
+|   LongInfixR_Pidgin | 279,520.94 ns | 2,166.545 ns | 1,809.163 ns | 11.53 |    0.08 |      - |     129 B |
+|  LongInfixL_FParsec |  24,237.13 ns |    88.340 ns |    78.311 ns |  1.00 |    0.00 |      - |     200 B |
+|  LongInfixR_FParsec |  31,949.79 ns |   135.188 ns |   126.455 ns |  1.32 |    0.01 |      - |     200 B |
+|                     |               |              |              |       |         |        |           |
+|  ShortInfixL_Pidgin |     863.92 ns |     6.357 ns |     5.636 ns | 13.30 |    0.15 | 0.0076 |     136 B |
+|  ShortInfixR_Pidgin |     920.76 ns |     8.123 ns |     7.598 ns | 14.17 |    0.16 | 0.0076 |     128 B |
+| ShortInfixL_FParsec |      64.97 ns |     0.502 ns |     0.469 ns |  1.00 |    0.00 | 0.0119 |     200 B |
+| ShortInfixR_FParsec |      64.70 ns |     0.485 ns |     0.454 ns |  1.00 |    0.01 | 0.0119 |     200 B |
 
 #### `JsonBench`
 
-|              Method |       Mean |     Error |    StdDev | Ratio | RatioSD |     Gen 0 |    Gen 1 | Gen 2 |  Allocated |
-|-------------------- |-----------:|----------:|----------:|------:|--------:|----------:|---------:|------:|-----------:|
-|      BigJson_Pidgin |   684.6 us |  2.888 us |  2.701 us |  1.00 |    0.00 |   33.2031 |        - |     - |   101.7 KB |
-|     BigJson_Sprache | 3,597.5 us | 17.595 us | 16.458 us |  5.25 |    0.03 | 1726.5625 |        - |     - | 5291.81 KB |
-|  BigJson_Superpower | 2,884.4 us |  6.504 us |  5.766 us |  4.21 |    0.02 |  296.8750 |        - |     - |  913.43 KB |
-|     BigJson_FParsec |   750.1 us |  3.516 us |  3.289 us |  1.10 |    0.01 |  111.3281 |        - |     - |  343.43 KB |
-|                     |            |           |           |       |         |           |          |       |            |
-|     LongJson_Pidgin |   517.5 us |  2.418 us |  2.261 us |  1.00 |    0.00 |   33.2031 |        - |     - |  104.25 KB |
-|    LongJson_Sprache | 2,858.5 us | 10.491 us |  9.300 us |  5.53 |    0.03 | 1390.6250 |        - |     - | 4269.33 KB |
-| LongJson_Superpower | 2,348.1 us | 14.194 us | 13.277 us |  4.54 |    0.03 |  230.4688 |        - |     - |  706.79 KB |
-|    LongJson_FParsec |   642.5 us |  2.708 us |  2.533 us |  1.24 |    0.01 |  125.0000 |        - |     - |   384.3 KB |
-|                     |            |           |           |       |         |           |          |       |            |
-|     DeepJson_Pidgin |   399.3 us |  1.784 us |  1.582 us |  1.00 |    0.00 |   26.3672 |        - |     - |   82.24 KB |
-|    DeepJson_Sprache | 2,983.0 us | 42.512 us | 39.765 us |  7.46 |    0.09 |  761.7188 | 191.4063 |     - | 2922.46 KB |
-|    DeepJson_FParsec |   701.8 us |  1.665 us |  1.557 us |  1.76 |    0.01 |  112.3047 |        - |     - |  344.43 KB |
-|                     |            |           |           |       |         |           |          |       |            |
-|     WideJson_Pidgin |   427.8 us |  1.619 us |  1.515 us |  1.00 |    0.00 |   15.6250 |        - |     - |   48.42 KB |
-|    WideJson_Sprache | 1,704.2 us |  9.246 us |  8.196 us |  3.98 |    0.02 |  900.3906 |        - |     - | 2763.22 KB |
-| WideJson_Superpower | 1,494.6 us |  9.581 us |  8.962 us |  3.49 |    0.02 |  148.4375 |        - |     - |  459.74 KB |
-|    WideJson_FParsec |   379.5 us |  1.597 us |  1.494 us |  0.89 |    0.00 |   41.9922 |        - |     - |  129.02 KB |
+|              Method |       Mean |    Error |   StdDev | Ratio | RatioSD |    Gen 0 |   Gen 1 | Allocated |
+|-------------------- |-----------:|---------:|---------:|------:|--------:|---------:|--------:|----------:|
+|      BigJson_Pidgin |   235.6 μs |  2.56 μs |  2.27 μs |  1.00 |    0.00 |   6.1035 |  0.9766 |    102 KB |
+|     BigJson_Sprache | 1,625.5 μs | 17.24 μs | 16.12 μs |  6.90 |    0.09 | 322.2656 | 74.2188 |  5,274 KB |
+|  BigJson_Superpower | 1,063.0 μs |  7.74 μs |  7.24 μs |  4.51 |    0.05 |  54.6875 |  9.7656 |    913 KB |
+|     BigJson_FParsec |   176.5 μs |  1.42 μs |  1.32 μs |  0.75 |    0.01 |  14.4043 |  1.7090 |    236 KB |
+|                     |            |          |          |       |         |          |         |           |
+|     LongJson_Pidgin |   196.8 μs |  1.25 μs |  1.17 μs |  1.00 |    0.00 |   6.3477 |  0.9766 |    104 KB |
+|    LongJson_Sprache | 1,339.3 μs |  6.18 μs |  5.78 μs |  6.81 |    0.05 | 259.7656 | 46.8750 |  4,245 KB |
+| LongJson_Superpower |   872.6 μs |  3.58 μs |  3.34 μs |  4.43 |    0.03 |  42.9688 |  6.8359 |    707 KB |
+|    LongJson_FParsec |   146.2 μs |  0.73 μs |  0.65 μs |  0.74 |    0.01 |  13.9160 |  1.4648 |    230 KB |
+|                     |            |          |          |       |         |          |         |           |
+|     DeepJson_Pidgin |   217.9 μs |  2.41 μs |  2.25 μs |  1.00 |    0.00 |  11.9629 |  2.9297 |    197 KB |
+|    DeepJson_Sprache | 1,049.7 μs |  4.94 μs |  4.62 μs |  4.82 |    0.05 | 175.7813 | 64.4531 |  2,898 KB |
+|    DeepJson_FParsec |   129.1 μs |  0.69 μs |  0.65 μs |  0.59 |    0.01 |  11.4746 |  0.9766 |    190 KB |
+|                     |            |          |          |       |         |          |         |           |
+|     WideJson_Pidgin |   126.7 μs |  0.79 μs |  0.74 μs |  1.00 |    0.00 |   2.9297 |  0.2441 |     48 KB |
+|    WideJson_Sprache |   759.5 μs |  2.65 μs |  2.47 μs |  5.99 |    0.03 | 168.9453 | 25.3906 |  2,761 KB |
+| WideJson_Superpower |   543.0 μs |  2.93 μs |  2.74 μs |  4.29 |    0.02 |  27.3438 |  1.9531 |    460 KB |
+|    WideJson_FParsec |   100.2 μs |  0.50 μs |  0.46 μs |  0.79 |    0.01 |   6.3477 |  0.6104 |    105 KB |
